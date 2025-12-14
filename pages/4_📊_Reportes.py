@@ -768,8 +768,8 @@ with tab5:
         if todos_dist.data:
             df_dist = pd.DataFrame(todos_dist.data)
             
-            # Convertir fecha_registro a datetime
-            df_dist['fecha_registro'] = pd.to_datetime(df_dist['fecha_registro'])
+            # Convertir fecha_alta a datetime
+            df_dist['fecha_alta'] = pd.to_datetime(df_dist['fecha_alta'])
             
             # Contar por estatus
             activos = len(df_dist[df_dist['estatus'] == 'ACTIVO'])
@@ -778,7 +778,7 @@ with tab5:
             
             # Distribuidores nuevos este mes
             primer_dia_mes = datetime.now().replace(day=1)
-            nuevos_mes = len(df_dist[df_dist['fecha_registro'] >= primer_dia_mes])
+            nuevos_mes = len(df_dist[df_dist['fecha_alta'] >= primer_dia_mes])
             mes_actual_nombre = datetime.now().strftime('%B %Y')
             
             # Métricas principales
@@ -837,10 +837,10 @@ with tab5:
             with col2:
                 st.subheader("📈 Nuevos Distribuidores por Mes")
                 
-                # Agrupar por mes de registro (desde diciembre 2024)
-                df_dist['mes_registro'] = df_dist['fecha_registro'].dt.to_period('M')
-                nuevos_por_mes = df_dist.groupby('mes_registro').size().reset_index(name='cantidad')
-                nuevos_por_mes['mes_str'] = nuevos_por_mes['mes_registro'].astype(str)
+                # Agrupar por mes de alta (desde diciembre 2024)
+                df_dist['mes_alta'] = df_dist['fecha_alta'].dt.to_period('M')
+                nuevos_por_mes = df_dist.groupby('mes_alta').size().reset_index(name='cantidad')
+                nuevos_por_mes['mes_str'] = nuevos_por_mes['mes_alta'].astype(str)
                 
                 # Filtrar desde diciembre 2024
                 nuevos_por_mes = nuevos_por_mes[nuevos_por_mes['mes_str'] >= '2024-12']
