@@ -680,13 +680,28 @@ with tab4:
                     
                     df_diario = df.groupby('fecha_envio').size().reset_index(name='cantidad')
                     
-                    fig = px.area(
-                        df_diario,
-                        x='fecha_envio',
-                        y='cantidad',
-                        labels={'fecha_envio': 'Fecha', 'cantidad': 'Asignaciones'},
-                        color_discrete_sequence=['#1f77b4']
-                    )
+                    # Calcular días del período
+                    dias_periodo = (fecha_fin - fecha_inicio).days + 1
+                    
+                    # Usar gráfica de barras para períodos cortos (≤ 30 días), área para largos
+                    if dias_periodo <= 30:
+                        fig = px.bar(
+                            df_diario,
+                            x='fecha_envio',
+                            y='cantidad',
+                            text='cantidad',
+                            labels={'fecha_envio': 'Fecha', 'cantidad': 'Asignaciones'},
+                            color_discrete_sequence=['#1f77b4']
+                        )
+                        fig.update_traces(textposition='outside')
+                    else:
+                        fig = px.area(
+                            df_diario,
+                            x='fecha_envio',
+                            y='cantidad',
+                            labels={'fecha_envio': 'Fecha', 'cantidad': 'Asignaciones'},
+                            color_discrete_sequence=['#1f77b4']
+                        )
                     
                     fig.update_layout(height=400, hovermode='x unified')
                     st.plotly_chart(fig, use_container_width=True)
