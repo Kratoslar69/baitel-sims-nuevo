@@ -621,12 +621,33 @@ with tab4:
             with st.spinner("Generando análisis..."):
                 supabase = get_supabase_client()
                 
-                # Obtener datos del período
-                envios_periodo = supabase.table('envios')\
-                    .select('fecha_envio, codigo_bt, iccid, estatus')\
-                    .gte('fecha_envio', fecha_inicio.isoformat())\
-                    .lte('fecha_envio', fecha_fin.isoformat())\
-                    .execute()
+                # Obtener TODOS los datos del período con paginación automática
+                all_records = []
+                offset = 0
+                limit = 1000
+                
+                while True:
+                    envios_periodo = supabase.table('envios')\
+                        .select('fecha_envio, codigo_bt, iccid, estatus')\
+                        .gte('fecha_envio', fecha_inicio.isoformat())\
+                        .lte('fecha_envio', fecha_fin.isoformat())\
+                        .order('fecha_envio', desc=True)\
+                        .limit(limit)\
+                        .offset(offset)\
+                        .execute()
+                    
+                    if not envios_periodo.data:
+                        break
+                    
+                    all_records.extend(envios_periodo.data)
+                    offset += limit
+                    
+                    # Si obtenemos menos registros que el límite, es la última página
+                    if len(envios_periodo.data) < limit:
+                        break
+                
+                # Usar all_records en lugar de envios_periodo.data
+                envios_periodo = type('obj', (object,), {'data': all_records})()
                 
                 if envios_periodo.data:
                     df = pd.DataFrame(envios_periodo.data)
