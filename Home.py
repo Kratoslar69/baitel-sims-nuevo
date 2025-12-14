@@ -178,7 +178,7 @@ if data:
     with col1:
         st.subheader("📊 Distribución de Distribuidores")
         
-        # Gráfica de pie
+        # Gráfica de dona mejorada
         fig_dist = go.Figure(data=[go.Pie(
             labels=['Activos', 'Baja', 'Suspendidos'],
             values=[
@@ -187,12 +187,14 @@ if data:
                 data['stats_dist']['suspendidos']
             ],
             hole=.4,
-            marker=dict(colors=['#28a745', '#dc3545', '#ffc107'])
+            marker=dict(colors=['#28a745', '#dc3545', '#ffc107']),
+            textinfo='label+value+percent',
+            textposition='outside'
         )])
         
         fig_dist.update_layout(
             showlegend=True,
-            height=300,
+            height=350,
             margin=dict(l=20, r=20, t=30, b=20)
         )
         
@@ -208,14 +210,16 @@ if data:
             actividad_por_dia = df_actividad.groupby('fecha_envio').size().reset_index(name='cantidad')
             actividad_por_dia.rename(columns={'fecha_envio': 'fecha'}, inplace=True)
             
-            fig_actividad = px.line(
+            fig_actividad = px.bar(
                 actividad_por_dia,
                 x='fecha',
                 y='cantidad',
+                text='cantidad',
                 labels={'fecha': 'Fecha', 'cantidad': 'SIMs Asignadas'},
-                markers=True
+                color_discrete_sequence=['#1f77b4']
             )
             
+            fig_actividad.update_traces(textposition='outside')
             fig_actividad.update_layout(
                 height=300,
                 margin=dict(l=20, r=20, t=30, b=20),
@@ -245,19 +249,21 @@ if data:
             orientation='h',
             text='total_sims',
             labels={'codigo_bt': 'Distribuidor', 'total_sims': 'SIMs Asignadas'},
-            color='total_sims',
-            color_continuous_scale='Blues'
+            color_discrete_sequence=['#1f77b4']
         )
         
         fig_top.update_layout(
-            height=400,
+            height=450,
             showlegend=False,
             xaxis_title="Cantidad de SIMs",
             yaxis_title="",
             yaxis={'categoryorder': 'total ascending'}
         )
         
-        fig_top.update_traces(textposition='outside')
+        fig_top.update_traces(
+            textposition='outside',
+            textfont=dict(size=12, color='black')
+        )
         
         st.plotly_chart(fig_top, use_container_width=True)
     else:
