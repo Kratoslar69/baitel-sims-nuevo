@@ -203,32 +203,52 @@ if data:
         mes_actual = datetime.now().strftime('%B %Y')
         st.subheader(f"📈 Actividad de Envíos - {mes_actual}")
         
+        # Crear serie completa de días del mes (del 1 al día actual)
+        primer_dia = datetime.now().replace(day=1).date()
+        dia_actual = datetime.now().date()
+        
+        # Generar todos los días del mes hasta hoy
+        todos_los_dias = pd.date_range(start=primer_dia, end=dia_actual, freq='D')
+        df_completo = pd.DataFrame({'fecha': todos_los_dias, 'cantidad': 0})
+        
         if data['actividad_reciente']:
-            # Agrupar por fecha
+            # Agrupar por fecha los datos reales
             df_actividad = pd.DataFrame(data['actividad_reciente'])
-            df_actividad['fecha_envio'] = pd.to_datetime(df_actividad['fecha_envio'])
+            df_actividad['fecha_envio'] = pd.to_datetime(df_actividad['fecha_envio']).dt.date
             actividad_por_dia = df_actividad.groupby('fecha_envio').size().reset_index(name='cantidad')
             actividad_por_dia.rename(columns={'fecha_envio': 'fecha'}, inplace=True)
             
-            fig_actividad = px.bar(
-                actividad_por_dia,
-                x='fecha',
-                y='cantidad',
-                text='cantidad',
-                labels={'fecha': 'Fecha', 'cantidad': 'SIMs Asignadas'},
-                color_discrete_sequence=['#1f77b4']
-            )
+            # Convertir fecha a datetime para merge
+            df_completo['fecha'] = pd.to_datetime(df_completo['fecha']).dt.date
             
-            fig_actividad.update_traces(textposition='outside')
-            fig_actividad.update_layout(
-                height=300,
-                margin=dict(l=20, r=20, t=30, b=20),
-                hovermode='x unified'
+            # Combinar: actualizar cantidades donde hay datos reales
+            for _, row in actividad_por_dia.iterrows():
+                df_completo.loc[df_completo['fecha'] == row['fecha'], 'cantidad'] = row['cantidad']
+        
+        # Convertir fecha a datetime para la gráfica
+        df_completo['fecha'] = pd.to_datetime(df_completo['fecha'])
+        
+        fig_actividad = px.bar(
+            df_completo,
+            x='fecha',
+            y='cantidad',
+            text='cantidad',
+            labels={'fecha': 'Fecha', 'cantidad': 'SIMs Asignadas'},
+            color_discrete_sequence=['#1f77b4']
+        )
+        
+        fig_actividad.update_traces(textposition='outside')
+        fig_actividad.update_layout(
+            height=300,
+            margin=dict(l=20, r=20, t=30, b=20),
+            hovermode='x unified',
+            xaxis=dict(
+                tickformat='%d %b',
+                dtick=86400000.0  # 1 día en milisegundos
             )
-            
-            st.plotly_chart(fig_actividad, use_container_width=True)
-        else:
-            st.info(f"Sin actividad en {mes_actual}")
+        )
+        
+        st.plotly_chart(fig_actividad, use_container_width=True)
     
     st.markdown("---")
     
