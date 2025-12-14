@@ -107,18 +107,17 @@ def get_dashboard_data():
             .eq('estatus', 'ACTIVO')\
             .execute()
         
-        # Actividad últimos 30 días
-        hace_30_dias = (datetime.now() - timedelta(days=30)).date().isoformat()
+        # Actividad del mes actual
+        primer_dia_mes = datetime.now().replace(day=1).date().isoformat()
         actividad_reciente = supabase.table('envios')\
             .select('fecha_envio, codigo_bt, iccid')\
-            .gte('fecha_envio', hace_30_dias)\
-            .eq('estatus', 'ACTIVO')\
+            .gte('fecha_envio', primer_dia_mes)\
             .execute()
         
-        # Top 10 distribuidores
+        # Top 10 distribuidores del mes actual
         top_distribuidores = supabase.table('envios')\
             .select('codigo_bt, nombre_distribuidor')\
-            .eq('estatus', 'ACTIVO')\
+            .gte('fecha_envio', primer_dia_mes)\
             .execute()
         
         return {
@@ -201,7 +200,8 @@ if data:
         st.plotly_chart(fig_dist, use_container_width=True)
     
     with col2:
-        st.subheader("📈 Actividad Últimos 30 Días")
+        mes_actual = datetime.now().strftime('%B %Y')
+        st.subheader(f"📈 Actividad de Envíos - {mes_actual}")
         
         if data['actividad_reciente']:
             # Agrupar por fecha
@@ -228,12 +228,13 @@ if data:
             
             st.plotly_chart(fig_actividad, use_container_width=True)
         else:
-            st.info("Sin actividad en los últimos 30 días")
+            st.info(f"Sin actividad en {mes_actual}")
     
     st.markdown("---")
     
-    # Top distribuidores
-    st.subheader("🏆 Top 10 Distribuidores (SIMs Activas)")
+    # Top distribuidores del mes actual
+    mes_actual_top = datetime.now().strftime('%B %Y')
+    st.subheader(f"🏆 Top 10 Distribuidores - {mes_actual_top} (SIMs Surtidas)")
     
     if data['top_distribuidores']:
         df_top = pd.DataFrame(data['top_distribuidores'])
