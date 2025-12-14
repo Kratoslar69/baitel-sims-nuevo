@@ -37,11 +37,12 @@ st.title("📊 Reportes y Análisis")
 st.markdown("---")
 
 # Tabs para diferentes reportes
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📈 Dashboard General",
     "🔍 Consulta Personalizada",
     "👥 Por Distribuidor",
-    "📅 Análisis Temporal"
+    "📅 Análisis Temporal",
+    "🏪 Análisis de Distribuidores"
 ])
 
 # TAB 1: DASHBOARD GENERAL
@@ -123,8 +124,7 @@ with tab1:
                 y='codigo_bt',
                 orientation='h',
                 text='total',
-                color='total',
-                color_continuous_scale='Blues'
+                color_discrete_sequence=['#1f77b4']
             )
             
             fig_top.update_layout(
@@ -136,7 +136,10 @@ with tab1:
                 margin=dict(l=20, r=20, t=30, b=20)
             )
             
-            fig_top.update_traces(textposition='outside')
+            fig_top.update_traces(
+                textposition='outside',
+                textfont=dict(size=12, color='black')
+            )
             st.plotly_chart(fig_top, use_container_width=True)
         else:
             st.info("Sin datos de envíos")
@@ -157,14 +160,16 @@ with tab1:
         df_actividad['fecha_envio'] = pd.to_datetime(df_actividad['fecha_envio'])
         actividad_diaria = df_actividad.groupby('fecha_envio').size().reset_index(name='cantidad')
         
-        fig_linea = px.line(
+        fig_linea = px.bar(
             actividad_diaria,
             x='fecha_envio',
             y='cantidad',
+            text='cantidad',
             labels={'fecha_envio': 'Fecha', 'cantidad': 'SIMs Asignadas'},
-            markers=True
+            color_discrete_sequence=['#1f77b4']
         )
         
+        fig_linea.update_traces(textposition='outside')
         fig_linea.update_layout(
             height=300,
             hovermode='x unified',
@@ -749,6 +754,143 @@ with tab4:
                     )
                 else:
                     st.warning("⚠️ No hay datos en el período seleccionado")
+
+# TAB 5: ANÁLISIS DE DISTRIBUIDORES
+with tab5:
+    st.subheader("🏪 Análisis de Distribuidores")
+    
+    with st.spinner("Cargando datos de distribuidores..."):
+        supabase = get_supabase_client()
+        
+        # Obtener todos los distribuidores
+        todos_dist = supabase.table('distribuidores').select('*').execute()
+        
+        if todos_dist.data:
+            df_dist = pd.DataFrame(todos_dist.data)
+            
+            # Convertir fecha_registro a datetime
+            df_dist['fecha_registro'] = pd.to_datetime(df_dist['fecha_registro'])
+            
+            # Contar por estatus
+            activos = len(df_dist[df_dist['estatus'] == 'ACTIVO'])
+            suspendidos = len(df_dist[df_dist['estatus'] == 'SUSPENDIDO'])
+            baja = len(df_dist[df_dist['estatus'] == 'BAJA'])
+            
+            # Distribuidores nuevos este mes
+            primer_dia_mes = datetime.now().replace(day=1)
+            nuevos_mes = len(df_dist[df_dist['fecha_registro'] >= primer_dia_mes])
+            mes_actual_nombre = datetime.now().strftime('%B %Y')
+            
+            # Métricas principales
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric(
+                    label="👥 Total Distribuidores",
+                    value=len(df_dist)
+                )
+            
+            with col2:
+                st.metric(
+                    label="✅ Activos",
+                    value=activos,
+                    delta=f"{(activos/len(df_dist)*100):.1f}%"
+                )
+            
+            with col3:
+                st.metric(
+                    label="⚠️ Suspendidos",
+                    value=suspendidos
+                )
+            
+            with col4:
+                st.metric(
+                    label=f"🆕 Nuevos en {mes_actual_nombre.split()[0]}",
+                    value=nuevos_mes,
+                    delta="Este mes"
+                )
+            
+            st.markdown("---")
+            
+            # Gráficas
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("📊 Distribución por Estatus")
+                
+                fig_estatus = go.Figure(data=[go.Pie(
+                    labels=['Activos', 'Suspendidos', 'Baja'],
+                    values=[activos, suspendidos, baja],
+                    hole=.4,
+                    marker=dict(colors=['#28a745', '#ffc107', '#dc3545']),
+                    textinfo='label+value+percent',
+                    textposition='outside'
+                )])
+                
+                fig_estatus.update_layout(
+                    height=350,
+                    margin=dict(l=20, r=20, t=30, b=20)
+                )
+                
+                st.plotly_chart(fig_estatus, use_container_width=True)
+            
+            with col2:
+                st.subheader("📈 Nuevos Distribuidores por Mes")
+                
+                # Agrupar por mes de registro (desde diciembre 2024)
+                df_dist['mes_registro'] = df_dist['fecha_registro'].dt.to_period('M')
+                nuevos_por_mes = df_dist.groupby('mes_registro').size().reset_index(name='cantidad')
+                nuevos_por_mes['mes_str'] = nuevos_por_mes['mes_registro'].astype(str)
+                
+                # Filtrar desde diciembre 2024
+                nuevos_por_mes = nuevos_por_mes[nuevos_por_mes['mes_str'] >= '2024-12']
+                
+                if len(nuevos_por_mes) > 0:
+                    fig_nuevos = px.bar(
+                        nuevos_por_mes,
+                        x='mes_str',
+                        y='cantidad',
+                        text='cantidad',
+                        labels={'mes_str': 'Mes', 'cantidad': 'Nuevos Distribuidores'},
+                        color_discrete_sequence=['#1f77b4']
+                    )
+                    
+                    fig_nuevos.update_traces(textposition='outside')
+                    fig_nuevos.update_layout(
+                        height=350,
+                        margin=dict(l=20, r=20, t=30, b=20),
+                        xaxis_title="Mes",
+                        yaxis_title="Cantidad"
+                    )
+                    
+                    st.plotly_chart(fig_nuevos, use_container_width=True)
+                else:
+                    st.info("Sin datos desde diciembre 2024")
+            
+            st.markdown("---")
+            
+            # Tabla resumen mensual
+            st.subheader("📋 Resumen Mensual de Nuevos Distribuidores")
+            
+            if len(nuevos_por_mes) > 0:
+                tabla_resumen = nuevos_por_mes[['mes_str', 'cantidad']].copy()
+                tabla_resumen.columns = ['Mes', 'Nuevos Distribuidores']
+                tabla_resumen = tabla_resumen.sort_values('Mes', ascending=False)
+                
+                st.dataframe(tabla_resumen, use_container_width=True, hide_index=True)
+                
+                # Botón de descarga
+                csv_dist = tabla_resumen.to_csv(index=False).encode('utf-8-sig')
+                st.download_button(
+                    label="📅 Descargar Resumen Mensual",
+                    data=csv_dist,
+                    file_name="resumen_distribuidores_mensual.csv",
+                    mime="text/csv"
+                )
+            else:
+                st.info("Sin datos históricos disponibles")
+        else:
+            st.warning("⚠️ No hay distribuidores registrados")
 
 # Footer
 st.markdown("---")
