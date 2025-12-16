@@ -137,7 +137,7 @@ def buscar_envios(
             if estatus:
                 query = query.eq('estatus', estatus.upper().strip())
             
-            query = query.order('created_at', desc=True).range(offset, offset + batch_size - 1)
+            query = query.order('id', desc=False).range(offset, offset + batch_size - 1)
             
             result = query.execute()
             
@@ -177,7 +177,7 @@ def buscar_envios(
         if estatus:
             query = query.eq('estatus', estatus.upper().strip())
         
-        query = query.order('created_at', desc=True).limit(limit)
+        query = query.order('id', desc=False).limit(limit)
         
         result = query.execute()
         return result.data
