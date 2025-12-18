@@ -275,12 +275,18 @@ def reasignar_sim(
         raise ValueError(f"ICCID {iccid} no encontrado")
     
     # Marcar envío actual como REASIGNADO
-    supabase.table('envios')\
-        .update({
-            'estatus': 'REASIGNADO'
-        })\
-        .eq('id', envio_actual['id'])\
-        .execute()
+    try:
+        update_result = supabase.table('envios')\
+            .update({
+                'estatus': 'REASIGNADO'
+            })\
+            .eq('id', envio_actual['id'])\
+            .execute()
+        
+        if not update_result.data:
+            raise ValueError(f"No se pudo actualizar el registro a REASIGNADO")
+    except Exception as e:
+        raise ValueError(f"Error al marcar como REASIGNADO: {str(e)}")
     
     # Registrar en historial (DESHABILITADO - tabla no existe)
     # historial = {
@@ -309,7 +315,18 @@ def reasignar_sim(
         'usuario_captura': usuario
     }
     
-    result = supabase.table('envios').insert(nuevo_envio).execute()
+    try:
+        result = supabase.table('envios').insert(nuevo_envio).execute()
+        
+        if not result.data:
+            raise ValueError(f"No se pudo crear el nuevo registro ACTIVO")
+    except Exception as e:
+        # Si falla el INSERT, revertir el UPDATE
+        supabase.table('envios')\
+            .update({'estatus': 'ACTIVO'})\
+            .eq('id', envio_actual['id'])\
+            .execute()
+        raise ValueError(f"Error al crear nuevo registro: {str(e)}. Revertido a ACTIVO.")
     
     return {
         'envio_anterior': envio_actual,
