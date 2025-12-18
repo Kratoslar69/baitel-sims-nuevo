@@ -234,8 +234,7 @@ def corregir_distribuidor_envio(
         'distribuidor_id': nuevo_distribuidor_id,
         'codigo_bt': nuevo_codigo_bt.upper().strip(),
         'nombre_distribuidor': nuevo_nombre.upper().strip(),
-        'observaciones': f"CORREGIDO: {motivo}" if motivo else "CORREGIDO",
-        'updated_at': datetime.now().isoformat()
+        'observaciones': f"CORREGIDO: {motivo}" if motivo else "CORREGIDO"
     }
     
     result = supabase.table('envios')\
@@ -278,8 +277,7 @@ def reasignar_sim(
     # Marcar envío actual como REASIGNADO
     supabase.table('envios')\
         .update({
-            'estatus': 'REASIGNADO',
-            'updated_at': datetime.now().isoformat()
+            'estatus': 'REASIGNADO'
         })\
         .eq('id', envio_actual['id'])\
         .execute()
@@ -448,8 +446,7 @@ def cancelar_envio(iccid: str, motivo: str, usuario: str = "Sistema") -> Dict:
     
     data = {
         'estatus': 'CANCELADO',
-        'observaciones': f"CANCELADO: {motivo}",
-        'updated_at': datetime.now().isoformat()
+        'observaciones': f"CANCELADO: {motivo}"
     }
     
     result = supabase.table('envios')\
