@@ -55,7 +55,7 @@ st.markdown("---")
 
 # Sidebar
 with st.sidebar:
-    st.image("https://via.placeholder.com/200x80/4472C4/FFFFFF?text=BAITEL", use_column_width=True)
+    st.image("assets/LOGO_BAIT.png", width=150)
     st.markdown("### 🔧 Navegación")
     st.info("""
     **Funciones disponibles:**
