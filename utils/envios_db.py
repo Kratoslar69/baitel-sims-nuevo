@@ -274,64 +274,45 @@ def reasignar_sim(
     if not envio_actual:
         raise ValueError(f"ICCID {iccid} no encontrado")
     
-    # Marcar envío actual como REASIGNADO
+    # Guardar datos anteriores para el historial
+    distribuidor_anterior = {
+        'id': envio_actual['distribuidor_id'],
+        'codigo_bt': envio_actual['codigo_bt'],
+        'nombre': envio_actual['nombre_distribuidor']
+    }
+    
+    # Actualizar el registro existente con el nuevo distribuidor
+    observaciones_actual = envio_actual.get('observaciones', '')
+    nueva_observacion = f"REASIGNADO desde {envio_actual['codigo_bt']}: {motivo}"
+    
+    # Si ya tenía observaciones, agregar la nueva
+    if observaciones_actual:
+        observaciones_finales = f"{observaciones_actual} | {nueva_observacion}"
+    else:
+        observaciones_finales = nueva_observacion
+    
     try:
-        update_result = supabase.table('envios')\
+        result = supabase.table('envios')\
             .update({
-                'estatus': 'REASIGNADO'
+                'distribuidor_id': nuevo_distribuidor_id,
+                'codigo_bt': nuevo_codigo_bt.upper().strip(),
+                'nombre_distribuidor': nuevo_nombre.upper().strip(),
+                'fecha_envio': get_fecha_actual_mexico().isoformat(),
+                'observaciones': observaciones_finales,
+                'usuario_captura': usuario
             })\
             .eq('id', envio_actual['id'])\
             .execute()
         
-        if not update_result.data:
-            raise ValueError(f"No se pudo actualizar el registro a REASIGNADO")
-    except Exception as e:
-        raise ValueError(f"Error al marcar como REASIGNADO: {str(e)}")
-    
-    # Registrar en historial (DESHABILITADO - tabla no existe)
-    # historial = {
-    #     'envio_id': envio_actual['id'],
-    #     'tipo_cambio': 'REASIGNACION',
-    #     'distribuidor_anterior_id': envio_actual['distribuidor_id'],
-    #     'distribuidor_nuevo_id': nuevo_distribuidor_id,
-    #     'codigo_bt_anterior': envio_actual['codigo_bt'],
-    #     'codigo_bt_nuevo': nuevo_codigo_bt.upper().strip(),
-    #     'motivo': motivo,
-    #     'usuario': usuario
-    # }
-    # supabase.table('historial_cambios').insert(historial).execute()
-    
-    historial = None  # Placeholder para compatibilidad
-    
-    # Crear nuevo envío ACTIVO
-    nuevo_envio = {
-        'fecha_envio': get_fecha_actual_mexico().isoformat(),
-        'iccid': iccid.strip().upper(),
-        'distribuidor_id': nuevo_distribuidor_id,
-        'codigo_bt': nuevo_codigo_bt.upper().strip(),
-        'nombre_distribuidor': nuevo_nombre.upper().strip(),
-        'estatus': 'ACTIVO',
-        'observaciones': f"REASIGNADO: {motivo}",
-        'usuario_captura': usuario
-    }
-    
-    try:
-        result = supabase.table('envios').insert(nuevo_envio).execute()
-        
         if not result.data:
-            raise ValueError(f"No se pudo crear el nuevo registro ACTIVO")
+            raise ValueError(f"No se pudo actualizar el registro con el nuevo distribuidor")
     except Exception as e:
-        # Si falla el INSERT, revertir el UPDATE
-        supabase.table('envios')\
-            .update({'estatus': 'ACTIVO'})\
-            .eq('id', envio_actual['id'])\
-            .execute()
-        raise ValueError(f"Error al crear nuevo registro: {str(e)}. Revertido a ACTIVO.")
+        raise ValueError(f"Error al reasignar: {str(e)}")
     
     return {
-        'envio_anterior': envio_actual,
-        'envio_nuevo': result.data[0],
-        'historial': historial
+        'envio_anterior': distribuidor_anterior,
+        'envio_actualizado': result.data[0],
+        'motivo': motivo
     }
 
 
