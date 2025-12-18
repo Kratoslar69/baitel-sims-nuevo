@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 from utils.supabase_client import get_supabase_client
 from utils.distribuidores_db import get_estadisticas_distribuidores
+from version import get_version_string
 
 # Configuración de la página
 st.set_page_config(
@@ -296,9 +297,10 @@ else:
 
 # Footer
 st.markdown("---")
-st.markdown("""
+version = get_version_string()
+st.markdown(f"""
 <div style='text-align: center; color: #666; padding: 1rem;'>
-    <small>Sistema de Inventario de SIMs - BAITEL © 2025<br>
+    <small>Sistema de Inventario de SIMs - BAITEL {version} © 2025<br>
     Desarrollado para optimizar el control de distribución</small>
 </div>
 """, unsafe_allow_html=True)

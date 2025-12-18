@@ -3,6 +3,7 @@ Página de Administración de Distribuidores
 """
 
 import streamlit as st
+from version import get_version_string
 import pandas as pd
 import time
 from utils.distribuidores_db import (

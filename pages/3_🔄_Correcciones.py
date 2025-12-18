@@ -3,6 +3,7 @@ Página de Correcciones y Reasignaciones de SIMs
 """
 
 import streamlit as st
+from version import get_version_string
 import pandas as pd
 from utils.envios_db import (
     get_envio_by_iccid,

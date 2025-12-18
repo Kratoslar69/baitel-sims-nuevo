@@ -3,6 +3,7 @@ Página de Captura Masiva de SIMs
 """
 
 import streamlit as st
+from version import get_version_string
 import pandas as pd
 from datetime import date
 from utils.distribuidores_db import buscar_distribuidores, get_distribuidor_by_id

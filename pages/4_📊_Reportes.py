@@ -3,6 +3,7 @@ Página de Reportes y Análisis
 """
 
 import streamlit as st
+from version import get_version_string
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -894,8 +895,10 @@ with tab5:
 
 # Footer
 st.markdown("---")
-st.markdown("""
+version = get_version_string()
+st.markdown(f"""
 <div style='text-align: center; color: #666; padding: 1rem;'>
-    <small>💡 Tip: Exporta los reportes a CSV para análisis más profundos en Excel</small>
+    <small>💡 Tip: Exporta los reportes a CSV para análisis más profundos en Excel<br>
+    Sistema BAITEL {version} © 2025</small>
 </div>
 """, unsafe_allow_html=True)

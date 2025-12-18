@@ -282,19 +282,20 @@ def reasignar_sim(
         .eq('id', envio_actual['id'])\
         .execute()
     
-    # Registrar en historial
-    historial = {
-        'envio_id': envio_actual['id'],
-        'tipo_cambio': 'REASIGNACION',
-        'distribuidor_anterior_id': envio_actual['distribuidor_id'],
-        'distribuidor_nuevo_id': nuevo_distribuidor_id,
-        'codigo_bt_anterior': envio_actual['codigo_bt'],
-        'codigo_bt_nuevo': nuevo_codigo_bt.upper().strip(),
-        'motivo': motivo,
-        'usuario': usuario
-    }
+    # Registrar en historial (DESHABILITADO - tabla no existe)
+    # historial = {
+    #     'envio_id': envio_actual['id'],
+    #     'tipo_cambio': 'REASIGNACION',
+    #     'distribuidor_anterior_id': envio_actual['distribuidor_id'],
+    #     'distribuidor_nuevo_id': nuevo_distribuidor_id,
+    #     'codigo_bt_anterior': envio_actual['codigo_bt'],
+    #     'codigo_bt_nuevo': nuevo_codigo_bt.upper().strip(),
+    #     'motivo': motivo,
+    #     'usuario': usuario
+    # }
+    # supabase.table('historial_cambios').insert(historial).execute()
     
-    supabase.table('historial_cambios').insert(historial).execute()
+    historial = None  # Placeholder para compatibilidad
     
     # Crear nuevo envío ACTIVO
     nuevo_envio = {
