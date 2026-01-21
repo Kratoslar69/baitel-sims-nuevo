@@ -203,9 +203,20 @@ with tab2:
         )
     
     with col3:
-        estatus_buscar = st.selectbox(
-            "Estatus",
-            ["TODOS", "ACTIVO", "REASIGNADO", "CANCELADO"]
+        estatus_envio_buscar = st.selectbox(
+            "Estatus del Envío",
+            ["TODOS", "ACTIVO", "REASIGNADO", "CANCELADO"],
+            help="Filtrar por estatus del envío/ICCID"
+        )
+    
+    # Nueva fila para filtro de estatus de distribuidor
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        estatus_dist_buscar = st.selectbox(
+            "Estatus del Distribuidor",
+            ["TODOS", "ACTIVO", "BAJA", "SUSPENDIDO"],
+            help="Filtrar por estatus del distribuidor"
         )
     
     col1, col2 = st.columns(2)
@@ -229,14 +240,29 @@ with tab2:
     
     if st.button("🔍 Buscar Envíos", type="primary"):
         with st.spinner("Buscando todos los registros que coincidan con los filtros..."):
+            # Primero buscar envios
             resultados = buscar_envios(
                 iccid=iccid_buscar if iccid_buscar else None,
                 codigo_bt=codigo_bt_buscar if codigo_bt_buscar else None,
                 fecha_desde=fecha_desde,
                 fecha_hasta=fecha_hasta,
-                estatus=estatus_buscar if estatus_buscar != "TODOS" else None,
+                estatus=estatus_envio_buscar if estatus_envio_buscar != "TODOS" else None,
                 limit=None  # Sin límite - obtener todos los registros
             )
+            
+            # Filtrar por estatus de distribuidor si se especifica
+            if resultados and estatus_dist_buscar != "TODOS":
+                # Obtener lista de distribuidores con el estatus seleccionado
+                supabase = get_supabase_client()
+                dist_filtrados = supabase.table('distribuidores')\
+                    .select('codigo_bt')\
+                    .eq('estatus', estatus_dist_buscar)\
+                    .execute()
+                
+                codigos_validos = [d['codigo_bt'] for d in dist_filtrados.data]
+                
+                # Filtrar resultados por códigos válidos
+                resultados = [r for r in resultados if r['codigo_bt'] in codigos_validos]
         
         if resultados:
             st.success(f"✅ {len(resultados)} envío(s) encontrado(s)")
@@ -284,7 +310,10 @@ with tab3:
             key="filtro_dist_reporte"
         )
     
-    if query_dist:
+    # Botón de búsqueda
+    buscar_clicked = st.button("🔍 Buscar Distribuidor", type="primary", key="buscar_dist_btn")
+    
+    if query_dist and buscar_clicked:
         estatus_filtro = None if filtro_dist == "TODOS" else filtro_dist
         distribuidores = buscar_distribuidores(query=query_dist, estatus=estatus_filtro, limit=20)
         
