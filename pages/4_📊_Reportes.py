@@ -267,10 +267,28 @@ with tab2:
         if resultados:
             st.success(f"✅ {len(resultados)} envío(s) encontrado(s)")
             
+            # Obtener estatus de distribuidores para agregar al CSV
+            supabase = get_supabase_client()
+            codigos_bt = list(set([r['codigo_bt'] for r in resultados]))
+            
+            # Consultar estatus de todos los distribuidores en los resultados
+            dist_estatus = {}
+            if codigos_bt:
+                dist_info = supabase.table('distribuidores')\
+                    .select('codigo_bt, estatus')\
+                    .in_('codigo_bt', codigos_bt)\
+                    .execute()
+                
+                dist_estatus = {d['codigo_bt']: d['estatus'] for d in dist_info.data}
+            
             # Mostrar tabla
             df = pd.DataFrame(resultados)
             df_display = df[['fecha_envio', 'iccid', 'codigo_bt', 'nombre_distribuidor', 'estatus']].copy()
-            df_display.columns = ['Fecha', 'ICCID', 'Código BT', 'Distribuidor', 'Estatus']
+            
+            # Agregar columna de estatus del distribuidor
+            df_display['estatus_distribuidor'] = df_display['codigo_bt'].map(dist_estatus).fillna('DESCONOCIDO')
+            
+            df_display.columns = ['Fecha', 'ICCID', 'Código BT', 'Distribuidor', 'Estatus Envío', 'Estatus Distribuidor']
             
             # Formatear fecha a DD/MM/YYYY
             df_display['Fecha'] = pd.to_datetime(df_display['Fecha']).dt.strftime('%d/%m/%Y')
