@@ -2,9 +2,9 @@
 Sistema de versionado de la aplicación
 """
 
-VERSION = "1.0.0"
-VERSION_DATE = "2025-12-17"
-VERSION_NAME = "Release Inicial"
+VERSION = "1.1.0"
+VERSION_DATE = "2026-01-21"
+VERSION_NAME = "Mejoras en Reportes"
 
 def get_version_info():
     """Retorna información completa de la versión"""
