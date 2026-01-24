@@ -5,10 +5,13 @@ Cliente de Supabase con cache
 import streamlit as st
 from supabase import create_client, Client
 import os
-from dotenv import load_dotenv
 
-# Cargar variables de entorno (solo para desarrollo local)
-load_dotenv()
+# NO cargar dotenv en producción (Railway)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except:
+    pass
 
 @st.cache_resource
 def get_supabase_client() -> Client:
@@ -20,8 +23,8 @@ def get_supabase_client() -> Client:
         Client: Cliente de Supabase
     """
     # Intentar obtener de variables de entorno primero (Railway, desarrollo local)
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_KEY")
+    url = os.environ.get("SUPABASE_URL") or os.getenv("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_KEY") or os.getenv("SUPABASE_KEY")
     
     # Si no están en variables de entorno, intentar secrets de Streamlit
     if not url or not key:
@@ -32,6 +35,6 @@ def get_supabase_client() -> Client:
             pass
     
     if not url or not key:
-        raise ValueError("SUPABASE_URL y SUPABASE_KEY deben estar configurados en variables de entorno o secrets")
+        raise ValueError(f"SUPABASE_URL y SUPABASE_KEY deben estar configurados. URL encontrada: {bool(url)}, KEY encontrada: {bool(key)}")
     
     return create_client(url, key)
