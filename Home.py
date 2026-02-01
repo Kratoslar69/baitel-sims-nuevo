@@ -105,7 +105,7 @@ def get_dashboard_data():
         # Envíos activos
         envios_activos = supabase.table('envios')\
             .select('*', count='exact')\
-            .eq('estatus', 'ACTIVO')\
+            .eq('estatus_envio', 'ACTIVO')\
             .execute()
         
         # Actividad del mes actual

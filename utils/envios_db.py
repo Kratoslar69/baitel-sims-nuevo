@@ -64,7 +64,7 @@ def capturar_envio_masivo(
             'distribuidor_id': distribuidor_id,
             'codigo_bt': codigo_bt.upper().strip(),
             'nombre_distribuidor': nombre_distribuidor.upper().strip(),
-            'estatus': 'ACTIVO',
+            'estatus_envio': 'ACTIVO',
             'observaciones': observaciones,
             'usuario_captura': usuario_captura
         })
@@ -141,7 +141,7 @@ def buscar_envios(
                 query = query.lte('fecha_envio', fecha_hasta.isoformat())
             
             if estatus:
-                query = query.eq('estatus', estatus.upper().strip())
+                query = query.eq('estatus_envio', estatus.upper().strip())
             
             query = query.order('id', desc=False).range(offset, offset + batch_size - 1)
             
@@ -185,7 +185,7 @@ def buscar_envios(
             query = query.lte('fecha_envio', fecha_hasta.isoformat())
         
         if estatus:
-            query = query.eq('estatus', estatus.upper().strip())
+            query = query.eq('estatus_envio', estatus.upper().strip())
         
         query = query.order('id', desc=False).limit(limit)
         
@@ -393,19 +393,19 @@ def get_estadisticas_envios() -> Dict:
     # Activos
     activos = supabase.table('envios')\
         .select('*', count='exact')\
-        .eq('estatus', 'ACTIVO')\
+        .eq('estatus_envio', 'ACTIVO')\
         .execute()
     
     # Reasignados
     reasignados = supabase.table('envios')\
         .select('*', count='exact')\
-        .eq('estatus', 'REASIGNADO')\
+        .eq('estatus_envio', 'REASIGNADO')\
         .execute()
     
     # Cancelados
     cancelados = supabase.table('envios')\
         .select('*', count='exact')\
-        .eq('estatus', 'CANCELADO')\
+        .eq('estatus_envio', 'CANCELADO')\
         .execute()
     
     return {
@@ -432,7 +432,7 @@ def get_sims_por_distribuidor(codigo_bt: str, estatus: str = 'ACTIVO') -> List[D
     result = supabase.table('envios')\
         .select('*')\
         .eq('codigo_bt', codigo_bt.upper().strip())\
-        .eq('estatus', estatus.upper().strip())\
+        .eq('estatus_envio', estatus.upper().strip())\
         .order('fecha_envio', desc=True)\
         .execute()
     
@@ -454,7 +454,7 @@ def cancelar_envio(iccid: str, motivo: str, usuario: str = "Sistema") -> Dict:
     supabase = get_supabase_client()
     
     data = {
-        'estatus': 'CANCELADO',
+        'estatus_envio': 'CANCELADO',
         'observaciones': f"CANCELADO: {motivo}"
     }
     

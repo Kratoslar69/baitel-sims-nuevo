@@ -154,7 +154,7 @@ with tab1:
                             <p><strong>Código:</strong> {nuevo_dist['codigo_bt']}<br>
                             <strong>Nombre:</strong> {nuevo_dist['nombre']}<br>
                             <strong>Plaza:</strong> {nuevo_dist['plaza']}<br>
-                            <strong>Estatus:</strong> {nuevo_dist['estatus']}</p>
+                            <strong>Estatus:</strong> {nuevo_dist['estatus_distribuidor']}</p>
                         </div>
                         """, unsafe_allow_html=True)
                         
@@ -250,7 +250,7 @@ with tab2:
                     nuevo_estatus = st.selectbox(
                         "Estatus",
                         ["ACTIVO", "SUSPENDIDO", "BAJA"],
-                        index=["ACTIVO", "SUSPENDIDO", "BAJA"].index(dist_actual['estatus']),
+                        index=["ACTIVO", "SUSPENDIDO", "BAJA"].index(dist_actual['estatus_distribuidor']),
                         help="Estado del distribuidor"
                     )
                 
@@ -360,7 +360,7 @@ with tab3:
             
             # Mostrar tabla
             df = pd.DataFrame(distribuidores)
-            df_display = df[['codigo_bt', 'nombre', 'plaza', 'telefono', 'email', 'estatus', 'fecha_alta']].copy()
+            df_display = df[['codigo_bt', 'nombre', 'plaza', 'telefono', 'email', 'estatus_distribuidor', 'fecha_alta']].copy()
             df_display.columns = ['Código BT', 'Nombre', 'Plaza', 'Teléfono', 'Email', 'Estatus', 'Fecha Alta']
             
             # Formatear fecha

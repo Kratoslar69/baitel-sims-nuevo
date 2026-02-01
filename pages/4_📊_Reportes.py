@@ -56,14 +56,14 @@ with tab1:
         
         # Obtener datos de distribuidores
         supabase = get_supabase_client()
-        dist_activos = supabase.table('distribuidores').select('*', count='exact').eq('estatus', 'ACTIVO').execute()
+        dist_activos = supabase.table('distribuidores').select('*', count='exact').eq('estatus_distribuidor', 'ACTIVO').execute()
         
         # Actividad últimos 30 días
         hace_30_dias = (get_fecha_actual_mexico() - timedelta(days=30)).isoformat()
         envios_30d = supabase.table('envios')\
             .select('*', count='exact')\
             .gte('fecha_envio', hace_30_dias)\
-            .eq('estatus', 'ACTIVO')\
+            .eq('estatus_distribuidor', 'ACTIVO')\
             .execute()
     
     # Métricas principales
@@ -109,7 +109,7 @@ with tab1:
         # Obtener top distribuidores
         top_dist = supabase.table('envios')\
             .select('codigo_bt, nombre_distribuidor')\
-            .eq('estatus', 'ACTIVO')\
+            .eq('estatus_distribuidor', 'ACTIVO')\
             .execute()
         
         if top_dist.data:
@@ -153,7 +153,7 @@ with tab1:
     envios_recientes = supabase.table('envios')\
         .select('fecha_envio, iccid')\
         .gte('fecha_envio', hace_30_dias)\
-        .eq('estatus', 'ACTIVO')\
+        .eq('estatus_distribuidor', 'ACTIVO')\
         .execute()
     
     if envios_recientes.data:
@@ -288,15 +288,15 @@ with tab2:
             dist_estatus = {}
             if codigos_bt:
                 dist_info = supabase.table('distribuidores')\
-                    .select('codigo_bt, estatus')\
+                    .select('codigo_bt, estatus_distribuidor')\
                     .in_('codigo_bt', codigos_bt)\
                     .execute()
                 
-                dist_estatus = {d['codigo_bt']: d['estatus'] for d in dist_info.data}
+                dist_estatus = {d['codigo_bt']: d['estatus_distribuidor'] for d in dist_info.data}
             
             # Mostrar tabla
             df = pd.DataFrame(resultados)
-            df_display = df[['fecha_envio', 'iccid', 'codigo_bt', 'nombre_distribuidor', 'estatus']].copy()
+            df_display = df[['fecha_envio', 'iccid', 'codigo_bt', 'nombre_distribuidor', 'estatus_envio']].copy()
             
             # Agregar columna de estatus del distribuidor
             df_display['estatus_distribuidor'] = df_display['codigo_bt'].map(dist_estatus).fillna('DESCONOCIDO')
@@ -373,7 +373,7 @@ with tab3:
             with col3:
                 st.metric("Plaza", dist_info['plaza'])
             with col4:
-                st.metric("Estatus", dist_info['estatus'])
+                st.metric("Estatus", dist_info['estatus_distribuidor'])
             
             # Obtener SIMs del distribuidor
             st.markdown("---")
@@ -728,7 +728,7 @@ with tab4:
                         st.metric("Total Asignaciones", len(df))
                     
                     with col2:
-                        activas = len(df[df['estatus'] == 'ACTIVO'])
+                        activas = len(df[df['estatus_distribuidor'] == 'ACTIVO'])
                         st.metric("Activas", activas)
                     
                     with col3:
@@ -833,9 +833,9 @@ with tab5:
             df_dist['fecha_alta'] = pd.to_datetime(df_dist['fecha_alta'])
             
             # Contar por estatus
-            activos = len(df_dist[df_dist['estatus'] == 'ACTIVO'])
-            suspendidos = len(df_dist[df_dist['estatus'] == 'SUSPENDIDO'])
-            baja = len(df_dist[df_dist['estatus'] == 'BAJA'])
+            activos = len(df_dist[df_dist['estatus_distribuidor'] == 'ACTIVO'])
+            suspendidos = len(df_dist[df_dist['estatus_distribuidor'] == 'SUSPENDIDO'])
+            baja = len(df_dist[df_dist['estatus_distribuidor'] == 'BAJA'])
             
             # Distribuidores nuevos este mes
             primer_dia_mes = datetime.now().replace(day=1)

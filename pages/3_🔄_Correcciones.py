@@ -111,7 +111,7 @@ with tab1:
                             'encontrado': True,
                             'codigo_bt': envio['codigo_bt'],
                             'nombre_distribuidor': envio['nombre_distribuidor'],
-                            'estatus': envio['estatus'],
+                            'estatus_envio': envio['estatus_envio'],
                             'distribuidor_id': envio['distribuidor_id']
                         })
                     else:
@@ -120,7 +120,7 @@ with tab1:
                             'encontrado': False,
                             'codigo_bt': 'N/A',
                             'nombre_distribuidor': 'N/A',
-                            'estatus': 'NO ENCONTRADO',
+                            'estatus_envio': 'NO ENCONTRADO',
                             'distribuidor_id': None
                         })
                 
@@ -135,7 +135,7 @@ with tab1:
             # Estadísticas
             encontrados = df_resultados['encontrado'].sum()
             no_encontrados = len(df_resultados) - encontrados
-            activos = len(df_resultados[df_resultados['estatus'] == 'ACTIVO'])
+            activos = len(df_resultados[df_resultados['estatus_distribuidor'] == 'ACTIVO'])
             
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -147,7 +147,7 @@ with tab1:
             
             # Mostrar tabla
             st.markdown("### 📋 ICCIDs Encontrados")
-            df_display = df_resultados[['iccid', 'codigo_bt', 'nombre_distribuidor', 'estatus']].copy()
+            df_display = df_resultados[['iccid', 'codigo_bt', 'nombre_distribuidor', 'estatus_envio']].copy()
             df_display.columns = ['ICCID', 'Código BT Actual', 'Distribuidor Actual', 'Estatus']
             
             # Colorear por estatus
@@ -195,7 +195,7 @@ with tab1:
                         df_dist = pd.DataFrame(distribuidores)
                         
                         # Mostrar tabla
-                        df_display = df_dist[['codigo_bt', 'nombre', 'plaza', 'estatus']].copy()
+                        df_display = df_dist[['codigo_bt', 'nombre', 'plaza', 'estatus_distribuidor']].copy()
                         df_display.columns = ['Código BT', 'Nombre', 'Plaza', 'Estatus']
                         st.dataframe(df_display, use_container_width=True, hide_index=True)
                         
@@ -238,7 +238,7 @@ with tab1:
                                     progress_bar = st.progress(0)
                                     status_text = st.empty()
                                     
-                                    iccids_activos = [r for r in resultados if r['estatus'] == 'ACTIVO']
+                                    iccids_activos = [r for r in resultados if r['estatus_distribuidor'] == 'ACTIVO']
                                     
                                     for idx, resultado in enumerate(iccids_activos):
                                         try:
@@ -331,7 +331,7 @@ with tab2:
                             'encontrado': True,
                             'codigo_bt': envio['codigo_bt'],
                             'nombre_distribuidor': envio['nombre_distribuidor'],
-                            'estatus': envio['estatus'],
+                            'estatus_envio': envio['estatus_envio'],
                             'distribuidor_id': envio['distribuidor_id']
                         })
                     else:
@@ -340,7 +340,7 @@ with tab2:
                             'encontrado': False,
                             'codigo_bt': 'N/A',
                             'nombre_distribuidor': 'N/A',
-                            'estatus': 'NO ENCONTRADO',
+                            'estatus_envio': 'NO ENCONTRADO',
                             'distribuidor_id': None
                         })
                 
@@ -354,7 +354,7 @@ with tab2:
             # Estadísticas
             encontrados = df_resultados['encontrado'].sum()
             no_encontrados = len(df_resultados) - encontrados
-            activos = len(df_resultados[df_resultados['estatus'] == 'ACTIVO'])
+            activos = len(df_resultados[df_resultados['estatus_distribuidor'] == 'ACTIVO'])
             
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -366,7 +366,7 @@ with tab2:
             
             # Mostrar tabla
             st.markdown("### 📋 ICCIDs Encontrados")
-            df_display = df_resultados[['iccid', 'codigo_bt', 'nombre_distribuidor', 'estatus']].copy()
+            df_display = df_resultados[['iccid', 'codigo_bt', 'nombre_distribuidor', 'estatus_envio']].copy()
             df_display.columns = ['ICCID', 'Código BT Actual', 'Distribuidor Actual', 'Estatus']
             
             def highlight_status(row):
@@ -412,7 +412,7 @@ with tab2:
                     if distribuidores:
                         df_dist = pd.DataFrame(distribuidores)
                         
-                        df_display = df_dist[['codigo_bt', 'nombre', 'plaza', 'estatus']].copy()
+                        df_display = df_dist[['codigo_bt', 'nombre', 'plaza', 'estatus_distribuidor']].copy()
                         df_display.columns = ['Código BT', 'Nombre', 'Plaza', 'Estatus']
                         st.dataframe(df_display, use_container_width=True, hide_index=True)
                         
@@ -454,7 +454,7 @@ with tab2:
                                     progress_bar = st.progress(0)
                                     status_text = st.empty()
                                     
-                                    iccids_activos = [r for r in resultados if r['estatus'] == 'ACTIVO']
+                                    iccids_activos = [r for r in resultados if r['estatus_distribuidor'] == 'ACTIVO']
                                     
                                     for idx, resultado in enumerate(iccids_activos):
                                         try:
@@ -548,7 +548,7 @@ with tab3:
                             'encontrado': True,
                             'codigo_bt': envio['codigo_bt'],
                             'nombre_distribuidor': envio['nombre_distribuidor'],
-                            'estatus': envio['estatus'],
+                            'estatus_envio': envio['estatus_envio'],
                             'fecha_envio': envio.get('fecha_envio', 'N/A')
                         })
                     else:
@@ -557,7 +557,7 @@ with tab3:
                             'encontrado': False,
                             'codigo_bt': 'N/A',
                             'nombre_distribuidor': 'N/A',
-                            'estatus': 'NO ENCONTRADO',
+                            'estatus_envio': 'NO ENCONTRADO',
                             'fecha_envio': 'N/A'
                         })
                 
@@ -580,7 +580,7 @@ with tab3:
             
             # Mostrar tabla
             st.markdown("### 📋 ICCIDs Encontrados")
-            df_display = df_resultados[['iccid', 'codigo_bt', 'nombre_distribuidor', 'estatus', 'fecha_envio']].copy()
+            df_display = df_resultados[['iccid', 'codigo_bt', 'nombre_distribuidor', 'estatus_envio', 'fecha_envio']].copy()
             df_display.columns = ['ICCID', 'Código BT', 'Distribuidor', 'Estatus', 'Fecha Envío']
             
             def highlight_status(row):
@@ -712,7 +712,7 @@ with tab4:
                             'encontrado': True,
                             'codigo_bt': envio['codigo_bt'],
                             'nombre_distribuidor': envio['nombre_distribuidor'],
-                            'estatus': envio['estatus'],
+                            'estatus_envio': envio['estatus_envio'],
                             'fecha_actual': envio.get('fecha_envio', 'N/A')
                         })
                     else:
@@ -721,7 +721,7 @@ with tab4:
                             'encontrado': False,
                             'codigo_bt': 'N/A',
                             'nombre_distribuidor': 'N/A',
-                            'estatus': 'NO ENCONTRADO',
+                            'estatus_envio': 'NO ENCONTRADO',
                             'fecha_actual': 'N/A'
                         })
                 
@@ -744,7 +744,7 @@ with tab4:
             
             # Mostrar tabla
             st.markdown("### 📋 ICCIDs Encontrados")
-            df_display = df_resultados[['iccid', 'codigo_bt', 'nombre_distribuidor', 'fecha_actual', 'estatus']].copy()
+            df_display = df_resultados[['iccid', 'codigo_bt', 'nombre_distribuidor', 'fecha_actual', 'estatus_envio']].copy()
             df_display.columns = ['ICCID', 'Código BT', 'Distribuidor', 'Fecha Actual', 'Estatus']
             
             def highlight_status(row):

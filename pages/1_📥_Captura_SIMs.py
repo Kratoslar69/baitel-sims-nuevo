@@ -87,7 +87,7 @@ if query_busqueda:
         
         # Mostrar resultados en tabla
         df_distribuidores = pd.DataFrame(distribuidores)
-        df_display = df_distribuidores[['codigo_bt', 'nombre', 'plaza', 'estatus']].copy()
+        df_display = df_distribuidores[['codigo_bt', 'nombre', 'plaza', 'estatus_distribuidor']].copy()
         df_display.columns = ['Código BT', 'Nombre', 'Plaza', 'Estatus']
         
         st.dataframe(df_display, use_container_width=True, hide_index=True)
@@ -120,7 +120,7 @@ if st.session_state.distribuidor_seleccionado:
         <p><strong>Código:</strong> {dist['codigo_bt']}<br>
         <strong>Nombre:</strong> {dist['nombre']}<br>
         <strong>Plaza:</strong> {dist['plaza']}<br>
-        <strong>Estatus:</strong> {dist['estatus']}</p>
+        <strong>Estatus:</strong> {dist['estatus_distribuidor']}</p>
     </div>
     """, unsafe_allow_html=True)
     

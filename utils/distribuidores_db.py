@@ -26,7 +26,7 @@ def buscar_distribuidores(query: str = "", estatus: Optional[str] = None, limit:
     
     # Filtrar por estatus si se especifica
     if estatus:
-        db_query = db_query.eq('estatus', estatus)
+        db_query = db_query.eq('estatus_distribuidor', estatus)
     
     # Buscar por texto si se especifica
     if query:
@@ -114,7 +114,7 @@ def crear_distribuidor(
         'codigo_bt': codigo_bt.upper().strip(),
         'nombre': nombre.upper().strip(),
         'plaza': plaza.upper().strip(),
-        'estatus': estatus.upper().strip(),
+        'estatus_distribuidor': estatus.upper().strip(),
         'fecha_alta': datetime.now().isoformat()
     }
     
@@ -150,7 +150,7 @@ def actualizar_distribuidor(id: str, **campos) -> Dict:
     if 'plaza' in campos:
         data['plaza'] = campos['plaza'].upper().strip()
     if 'estatus' in campos:
-        data['estatus'] = campos['estatus'].upper().strip()
+        data['estatus_distribuidor'] = campos['estatus'].upper().strip()
     if 'telefono' in campos:
         data['telefono'] = campos['telefono'].strip() if campos['telefono'] else None
     if 'email' in campos:
@@ -219,17 +219,17 @@ def get_estadisticas_distribuidores() -> Dict:
     # Por estatus
     activos = supabase.table('distribuidores')\
         .select('*', count='exact')\
-        .eq('estatus', 'ACTIVO')\
+        .eq('estatus_distribuidor', 'ACTIVO')\
         .execute()
     
     baja = supabase.table('distribuidores')\
         .select('*', count='exact')\
-        .eq('estatus', 'BAJA')\
+        .eq('estatus_distribuidor', 'BAJA')\
         .execute()
     
     suspendidos = supabase.table('distribuidores')\
         .select('*', count='exact')\
-        .eq('estatus', 'SUSPENDIDO')\
+        .eq('estatus_distribuidor', 'SUSPENDIDO')\
         .execute()
     
     return {
