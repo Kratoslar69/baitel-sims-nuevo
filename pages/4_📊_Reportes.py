@@ -250,19 +250,38 @@ with tab2:
                 limit=None  # Sin límite - obtener todos los registros
             )
             
-            # Filtrar por estatus de distribuidor si se especifica
-            if resultados and estatus_dist_buscar != "TODOS":
-                # Obtener lista de distribuidores con el estatus seleccionado
+            # Filtrar por estatus de distribuidor
+            # Siempre obtenemos el estatus de los distribuidores para filtrar correctamente
+            if resultados:
                 supabase = get_supabase_client()
-                dist_filtrados = supabase.table('distribuidores')\
-                    .select('codigo_bt')\
-                    .eq('estatus', estatus_dist_buscar)\
-                    .execute()
                 
-                codigos_validos = [d['codigo_bt'] for d in dist_filtrados.data]
+                # Obtener todos los códigos BT únicos de los resultados
+                codigos_bt_resultados = list(set([r['codigo_bt'] for r in resultados]))
                 
-                # Filtrar resultados por códigos válidos
-                resultados = [r for r in resultados if r['codigo_bt'] in codigos_validos]
+                if estatus_dist_buscar != "TODOS":
+                    # Filtrar por estatus específico
+                    dist_filtrados = supabase.table('distribuidores')\
+                        .select('codigo_bt')\
+                        .eq('estatus', estatus_dist_buscar)\
+                        .in_('codigo_bt', codigos_bt_resultados)\
+                        .execute()
+                    
+                    codigos_validos = [d['codigo_bt'] for d in dist_filtrados.data]
+                    
+                    # Filtrar resultados por códigos válidos
+                    resultados = [r for r in resultados if r['codigo_bt'] in codigos_validos]
+                else:
+                    # Cuando es "TODOS", verificar que los distribuidores existan en la tabla
+                    # Esto asegura que mostramos envíos de todos los distribuidores sin importar su estatus
+                    dist_existentes = supabase.table('distribuidores')\
+                        .select('codigo_bt')\
+                        .in_('codigo_bt', codigos_bt_resultados)\
+                        .execute()
+                    
+                    codigos_existentes = [d['codigo_bt'] for d in dist_existentes.data]
+                    
+                    # Mantener todos los resultados de distribuidores que existen
+                    resultados = [r for r in resultados if r['codigo_bt'] in codigos_existentes]
         
         if resultados:
             st.success(f"✅ {len(resultados)} envío(s) encontrado(s)")
