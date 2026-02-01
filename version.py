@@ -1,23 +1,15 @@
 """
-Sistema de versionado de la aplicación
+Información de versión del sistema
 """
 
-VERSION = "1.1.0"
-VERSION_DATE = "2026-01-21"
-VERSION_NAME = "Mejoras en Reportes"
-
-def get_version_info():
-    """Retorna información completa de la versión"""
-    return {
-        'version': VERSION,
-        'date': VERSION_DATE,
-        'name': VERSION_NAME
-    }
+VERSION = "1.1.1"
+VERSION_DATE = "01/02/2026"
+VERSION_NAME = "Claridad y Correcciones"
 
 def get_version_string():
-    """Retorna string formateado de la versión"""
-    return f"v{VERSION}"
-
-def get_full_version_string():
-    """Retorna string completo con nombre y fecha"""
+    """Retorna string de versión completo"""
     return f"v{VERSION} - {VERSION_NAME} ({VERSION_DATE})"
+
+def get_version():
+    """Retorna solo el número de versión"""
+    return VERSION
