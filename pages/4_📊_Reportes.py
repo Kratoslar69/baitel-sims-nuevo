@@ -240,29 +240,42 @@ with tab2:
     
     if st.button("🔍 Buscar Envíos", type="primary"):
         with st.spinner("Buscando todos los registros que coincidan con los filtros..."):
-            # Primero buscar envios
-            resultados = buscar_envios(
-                iccid=iccid_buscar if iccid_buscar else None,
-                codigo_bt=codigo_bt_buscar if codigo_bt_buscar else None,
-                fecha_desde=fecha_desde,
-                fecha_hasta=fecha_hasta,
-                estatus=estatus_envio_buscar if estatus_envio_buscar != "TODOS" else None,
-                limit=None  # Sin límite - obtener todos los registros
-            )
+            supabase = get_supabase_client()
             
-            # Filtrar por estatus de distribuidor si se especifica
-            if resultados and estatus_dist_buscar != "TODOS":
-                # Obtener lista de distribuidores con el estatus seleccionado
-                supabase = get_supabase_client()
+            # Si se filtra por estatus de distribuidor, primero obtener los códigos BT válidos
+            codigos_bt_filtrados = None
+            if estatus_dist_buscar != "TODOS":
                 dist_filtrados = supabase.table('distribuidores')\
                     .select('codigo_bt')\
                     .eq('estatus', estatus_dist_buscar)\
                     .execute()
                 
-                codigos_validos = [d['codigo_bt'] for d in dist_filtrados.data]
+                codigos_bt_filtrados = [d['codigo_bt'] for d in dist_filtrados.data]
                 
-                # Filtrar resultados por códigos válidos
-                resultados = [r for r in resultados if r['codigo_bt'] in codigos_validos]
+                # Si no hay distribuidores con ese estatus, no buscar envíos
+                if not codigos_bt_filtrados:
+                    resultados = []
+                else:
+                    # Buscar envíos solo de esos distribuidores
+                    resultados = buscar_envios(
+                        iccid=iccid_buscar if iccid_buscar else None,
+                        codigo_bt=codigo_bt_buscar if codigo_bt_buscar else None,
+                        fecha_desde=fecha_desde,
+                        fecha_hasta=fecha_hasta,
+                        estatus=estatus_envio_buscar if estatus_envio_buscar != "TODOS" else None,
+                        limit=None,  # Sin límite - obtener todos los registros
+                        codigos_bt_validos=codigos_bt_filtrados  # Nuevo parámetro
+                    )
+            else:
+                # Sin filtro de estatus de distribuidor, buscar todos
+                resultados = buscar_envios(
+                    iccid=iccid_buscar if iccid_buscar else None,
+                    codigo_bt=codigo_bt_buscar if codigo_bt_buscar else None,
+                    fecha_desde=fecha_desde,
+                    fecha_hasta=fecha_hasta,
+                    estatus=estatus_envio_buscar if estatus_envio_buscar != "TODOS" else None,
+                    limit=None  # Sin límite - obtener todos los registros
+                )
         
         if resultados:
             st.success(f"✅ {len(resultados)} envío(s) encontrado(s)")

@@ -95,7 +95,8 @@ def buscar_envios(
     fecha_desde: Optional[date] = None,
     fecha_hasta: Optional[date] = None,
     estatus: Optional[str] = None,
-    limit: int = 100
+    limit: int = 100,
+    codigos_bt_validos: Optional[List[str]] = None
 ) -> List[Dict]:
     """
     Buscar envíos con filtros
@@ -107,6 +108,7 @@ def buscar_envios(
         fecha_hasta: Fecha final
         estatus: Filtrar por estatus
         limit: Límite de resultados (None = sin límite, obtiene todos)
+        codigos_bt_validos: Lista de códigos BT válidos para filtrar (por estatus de distribuidor)
     
     Returns:
         Lista de envíos encontrados
@@ -127,6 +129,10 @@ def buscar_envios(
             
             if codigo_bt:
                 query = query.ilike('codigo_bt', f'%{codigo_bt.upper().strip()}%')
+            
+            # Filtrar por lista de códigos BT válidos (por estatus de distribuidor)
+            if codigos_bt_validos is not None:
+                query = query.in_('codigo_bt', codigos_bt_validos)
             
             if fecha_desde:
                 query = query.gte('fecha_envio', fecha_desde.isoformat())
@@ -167,6 +173,10 @@ def buscar_envios(
         
         if codigo_bt:
             query = query.ilike('codigo_bt', f'%{codigo_bt.upper().strip()}%')
+        
+        # Filtrar por lista de códigos BT válidos (por estatus de distribuidor)
+        if codigos_bt_validos is not None:
+            query = query.in_('codigo_bt', codigos_bt_validos)
         
         if fecha_desde:
             query = query.gte('fecha_envio', fecha_desde.isoformat())
