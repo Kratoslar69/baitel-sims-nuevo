@@ -1,5 +1,5 @@
 """
-P�gina de Reportes y Análisis
+P�gina de Reportes y Análisis
 """
 
 import streamlit as st
@@ -13,7 +13,7 @@ from utils.distribuidores_db import buscar_distribuidores, get_todos_distribuido
 from utils.supabase_client import get_supabase_client
 from utils.timezone_config import get_fecha_actual_mexico
 
-# Configuración de la página
+# Configuracion de la pagina
 st.set_page_config(
     page_title="Reportes - BAITEL",
     page_icon="📊",
