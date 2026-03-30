@@ -1,5 +1,5 @@
 """
-Página de Reportes y Análisis
+P�gina de Reportes y Análisis
 """
 
 import streamlit as st
@@ -184,7 +184,17 @@ with tab1:
 # TAB 2: CONSULTA PERSONALIZADA
 with tab2:
     st.subheader("Consulta Personalizada de Envíos")
-    
+
+    # --- Inicializar session_state para persistir CSV ---
+    if 'tab2_csv_data' not in st.session_state:
+        st.session_state.tab2_csv_data = None
+    if 'tab2_csv_filename' not in st.session_state:
+        st.session_state.tab2_csv_filename = None
+    if 'tab2_df_display' not in st.session_state:
+        st.session_state.tab2_df_display = None
+    if 'tab2_total' not in st.session_state:
+        st.session_state.tab2_total = 0
+
     # Filtros
     col1, col2, col3 = st.columns(3)
     
@@ -235,14 +245,12 @@ with tab2:
             help="Fecha final del rango (Zona horaria: México)"
         )
     
-    # Sin límite - obtener todos los registros que coincidan con los filtros
     st.info("ℹ️ El sistema traerá TODOS los registros que coincidan con los filtros, sin límites")
     
     if st.button("🔍 Buscar Envíos", type="primary"):
         with st.spinner("Buscando todos los registros que coincidan con los filtros..."):
             supabase = get_supabase_client()
             
-            # Si se filtra por estatus de distribuidor, primero obtener los códigos BT válidos
             codigos_bt_filtrados = None
             if estatus_dist_buscar != "TODOS":
                 dist_filtrados = supabase.table('distribuidores')\
@@ -252,73 +260,71 @@ with tab2:
                 
                 codigos_bt_filtrados = [d['codigo_bt'] for d in dist_filtrados.data]
                 
-                # Si no hay distribuidores con ese estatus, no buscar envíos
                 if not codigos_bt_filtrados:
                     resultados = []
                 else:
-                    # Buscar envíos solo de esos distribuidores
                     resultados = buscar_envios(
                         iccid=iccid_buscar if iccid_buscar else None,
                         codigo_bt=codigo_bt_buscar if codigo_bt_buscar else None,
                         fecha_desde=fecha_desde,
                         fecha_hasta=fecha_hasta,
                         estatus=estatus_envio_buscar if estatus_envio_buscar != "TODOS" else None,
-                        limit=None,  # Sin límite - obtener todos los registros
-                        codigos_bt_validos=codigos_bt_filtrados  # Nuevo parámetro
+                        limit=None,
+                        codigos_bt_validos=codigos_bt_filtrados
                     )
             else:
-                # Sin filtro de estatus de distribuidor, buscar todos
                 resultados = buscar_envios(
                     iccid=iccid_buscar if iccid_buscar else None,
                     codigo_bt=codigo_bt_buscar if codigo_bt_buscar else None,
                     fecha_desde=fecha_desde,
                     fecha_hasta=fecha_hasta,
                     estatus=estatus_envio_buscar if estatus_envio_buscar != "TODOS" else None,
-                    limit=None  # Sin límite - obtener todos los registros
+                    limit=None
                 )
         
         if resultados:
-            st.success(f"✅ {len(resultados)} envío(s) encontrado(s)")
-            
-            # Obtener estatus de distribuidores para agregar al CSV
             supabase = get_supabase_client()
             codigos_bt = list(set([r['codigo_bt'] for r in resultados]))
             
-            # Consultar estatus de todos los distribuidores en los resultados
             dist_estatus = {}
             if codigos_bt:
                 dist_info = supabase.table('distribuidores')\
                     .select('codigo_bt, estatus_distribuidor')\
                     .in_('codigo_bt', codigos_bt)\
                     .execute()
-                
                 dist_estatus = {d['codigo_bt']: d['estatus_distribuidor'] for d in dist_info.data}
             
-            # Mostrar tabla
             df = pd.DataFrame(resultados)
             df_display = df[['fecha_envio', 'iccid', 'codigo_bt', 'nombre_distribuidor', 'estatus_envio']].copy()
-            
-            # Agregar columna de estatus del distribuidor
             df_display['estatus_distribuidor'] = df_display['codigo_bt'].map(dist_estatus).fillna('DESCONOCIDO')
-            
             df_display.columns = ['Fecha', 'ICCID', 'Código BT', 'Distribuidor', 'Estatus Envío', 'Estatus Distribuidor']
-            
-            # Formatear fecha a DD/MM/YYYY
             df_display['Fecha'] = pd.to_datetime(df_display['Fecha']).dt.strftime('%d/%m/%Y')
-            
-            st.dataframe(df_display, use_container_width=True, hide_index=True)
-            
-            # Exportar
-            csv = df_display.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="📥 Descargar CSV",
-                data=csv,
-                file_name=f"envios_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
+
+            # --- Guardar en session_state para que el botón persista ---
+            csv_bytes = df_display.to_csv(index=False).encode('utf-8')
+            st.session_state.tab2_csv_data = csv_bytes
+            st.session_state.tab2_csv_filename = f"envios_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            st.session_state.tab2_df_display = df_display
+            st.session_state.tab2_total = len(resultados)
         else:
+            st.session_state.tab2_csv_data = None
+            st.session_state.tab2_df_display = None
+            st.session_state.tab2_total = 0
             st.warning("⚠️ No se encontraron envíos con esos criterios")
+
+    # --- Mostrar resultados y botón SIEMPRE que haya datos en session_state ---
+    if st.session_state.tab2_df_display is not None:
+        st.success(f"✅ {st.session_state.tab2_total} envío(s) encontrado(s)")
+        st.dataframe(st.session_state.tab2_df_display, use_container_width=True, hide_index=True)
+        
+        st.download_button(
+            label="📥 Descargar CSV",
+            data=st.session_state.tab2_csv_data,
+            file_name=st.session_state.tab2_csv_filename,
+            mime="text/csv",
+            use_container_width=True,
+            type="primary"
+        )
 
 # TAB 3: POR DISTRIBUIDOR
 with tab3:
@@ -341,7 +347,6 @@ with tab3:
             key="filtro_dist_reporte"
         )
     
-    # Botón de búsqueda
     buscar_clicked = st.button("🔍 Buscar Distribuidor", type="primary", key="buscar_dist_btn")
     
     if query_dist and buscar_clicked:
@@ -351,7 +356,6 @@ with tab3:
         if distribuidores:
             df_dist = pd.DataFrame(distribuidores)
             
-            # Seleccionar distribuidor
             codigo_seleccionado = st.selectbox(
                 "Seleccionar distribuidor",
                 df_dist['codigo_bt'].tolist(),
@@ -360,7 +364,6 @@ with tab3:
             
             dist_info = df_dist[df_dist['codigo_bt'] == codigo_seleccionado].iloc[0]
             
-            # Mostrar información del distribuidor
             st.markdown("---")
             st.markdown("### 📋 Información del Distribuidor")
             
@@ -375,12 +378,10 @@ with tab3:
             with col4:
                 st.metric("Estatus", dist_info['estatus_distribuidor'])
             
-            # Obtener SIMs del distribuidor
             st.markdown("---")
             st.markdown("### 📱 SIMs Asignadas")
             
             sims_activas = get_sims_por_distribuidor(codigo_seleccionado, estatus='ACTIVO')
-            sims_todas = get_sims_por_distribuidor(codigo_seleccionado, estatus='ACTIVO')
             
             col1, col2 = st.columns(2)
             
@@ -388,7 +389,6 @@ with tab3:
                 st.metric("SIMs Activas", len(sims_activas))
             
             with col2:
-                # Calcular promedio mensual
                 if sims_activas:
                     df_sims = pd.DataFrame(sims_activas)
                     df_sims['fecha_envio'] = pd.to_datetime(df_sims['fecha_envio'])
@@ -396,7 +396,6 @@ with tab3:
                     promedio_mes = len(sims_activas) / max(meses_activo, 1)
                     st.metric("Promedio Mensual", f"{promedio_mes:.1f}")
             
-            # Mostrar tabla de SIMs
             if sims_activas:
                 df_sims_display = pd.DataFrame(sims_activas)
                 df_sims_display = df_sims_display[['fecha_envio', 'iccid']].copy()
@@ -404,7 +403,6 @@ with tab3:
                 
                 st.dataframe(df_sims_display, use_container_width=True, hide_index=True)
                 
-                # Exportar
                 csv = df_sims_display.to_csv(index=False).encode('utf-8')
                 st.download_button(
                     label=f"📥 Descargar SIMs de {codigo_seleccionado}",
@@ -421,7 +419,6 @@ with tab3:
 with tab4:
     st.subheader("Análisis Temporal de Asignaciones")
     
-    # Selector de vista
     vista = st.radio(
         "Tipo de análisis",
         ["📊 Análisis por Año/Mes", "📈 Análisis por Período"],
@@ -431,8 +428,7 @@ with tab4:
     if vista == "📊 Análisis por Año/Mes":
         st.markdown("---")
         
-        # Función con caché para cargar todos los datos con paginación
-        @st.cache_data(ttl=3600)  # Cache por 1 hora
+        @st.cache_data(ttl=3600)
         def cargar_todos_envios():
             """Carga TODOS los registros de envíos usando paginación"""
             supabase = get_supabase_client()
@@ -454,17 +450,14 @@ with tab4:
                 all_records.extend(response.data)
                 offset += limit
                 
-                # Si obtenemos menos registros que el límite, es la última página
                 if len(response.data) < limit:
                     break
             
             return all_records
         
-        # Obtener todos los datos con caché
         with st.spinner("Cargando datos..."):
             datos_envios = cargar_todos_envios()
         
-        # Mostrar mensaje de confirmación
         st.success(f"✅ Datos cargados: {len(datos_envios):,} registros")
         
         if datos_envios:
@@ -474,7 +467,6 @@ with tab4:
             df_all['mes'] = df_all['fecha_envio'].dt.month
             df_all['mes_nombre'] = df_all['fecha_envio'].dt.strftime('%B')
             
-            # Información de datos cargados
             col1, col2, col3 = st.columns([2, 2, 1])
             with col1:
                 st.success(f"✅ Datos cargados: **{len(df_all):,} registros** de {len(df_all['codigo_bt'].unique())} distribuidores")
@@ -487,11 +479,9 @@ with tab4:
             
             st.markdown("---")
             
-            # Obtener años y distribuidores disponibles
             años_disponibles = sorted(df_all['año'].unique(), reverse=True)
             distribuidores_disponibles = sorted(df_all['codigo_bt'].unique())
             
-            # Selectores mejorados
             st.markdown("""
             <div style='background-color: #e3f2fd; padding: 1rem; border-radius: 10px; margin-bottom: 1rem;'>
                 <p style='margin: 0; color: #1976d2;'>
@@ -512,7 +502,6 @@ with tab4:
                 )
             
             with col2:
-                # Campo de búsqueda para filtrar distribuidores
                 busqueda_dist = st.text_input(
                     "🔍 Buscar distribuidor",
                     placeholder="Escribe para filtrar (ej: BT120, TLALIXCOYAN, XALAPA...)",
@@ -520,7 +509,6 @@ with tab4:
                     help="Filtra la lista de distribuidores escribiendo parte del código o nombre"
                 )
                 
-                # Filtrar distribuidores según búsqueda
                 if busqueda_dist:
                     distribuidores_filtrados = [
                         d for d in distribuidores_disponibles 
@@ -543,21 +531,17 @@ with tab4:
             
             st.markdown("---")
             
-            # Filtrar por año
             df_filtrado = df_all[df_all['año'] == año_seleccionado].copy()
             
-            # Filtrar por distribuidor si no es TODOS
             if distribuidor_seleccionado != "TODOS LOS DISTRIBUIDORES":
                 df_filtrado = df_filtrado[df_filtrado['codigo_bt'] == distribuidor_seleccionado].copy()
                 titulo_grafica = f'📈 {distribuidor_seleccionado} - {año_seleccionado}'
             else:
                 titulo_grafica = f'📈 Surtido General Mensual - {año_seleccionado}'
             
-            # Agrupar por mes
             df_mensual = df_filtrado.groupby(['mes', 'mes_nombre']).size().reset_index(name='cantidad')
             df_mensual = df_mensual.sort_values('mes')
             
-            # Crear gráfica de barras
             fig_barras = px.bar(
                 df_mensual,
                 x='mes_nombre',
@@ -584,7 +568,6 @@ with tab4:
             
             st.plotly_chart(fig_barras, use_container_width=True)
             
-            # Métricas del año
             st.markdown("---")
             if distribuidor_seleccionado != "TODOS LOS DISTRIBUIDORES":
                 st.markdown(f"### 📊 Estadísticas {distribuidor_seleccionado} - {año_seleccionado}")
@@ -617,7 +600,6 @@ with tab4:
                 else:
                     st.metric("Cantidad Máxima", "0")
             
-            # Tabla de datos
             st.markdown("---")
             st.markdown("### 📋 Detalle Mensual")
             
@@ -627,19 +609,15 @@ with tab4:
             
             st.dataframe(df_tabla, use_container_width=True, hide_index=True)
             
-            # Exportar relación completa de ICCIDs
             st.markdown("---")
             st.markdown("📄 **Exportar Datos**")
             
-            # Preparar datos para exportación con información detallada
             df_exportar = df_filtrado[['iccid', 'codigo_bt', 'nombre_distribuidor', 'fecha_envio']].copy()
             df_exportar['fecha_envio'] = df_exportar['fecha_envio'].dt.strftime('%Y-%m-%d')
             df_exportar.columns = ['ICCID', 'Código BT', 'Nombre Distribuidor', 'Fecha de Envío']
             
-            # Crear CSV
-            csv = df_exportar.to_csv(index=False).encode('utf-8-sig')  # utf-8-sig para Excel
+            csv = df_exportar.to_csv(index=False).encode('utf-8-sig')
             
-            # Nombre de archivo dinámico
             if distribuidor_seleccionado != "TODOS LOS DISTRIBUIDORES":
                 nombre_archivo = f"iccids_{distribuidor_seleccionado.replace(' ', '_')}_{año_seleccionado}.csv"
                 label_boton = f"📅 Descargar ICCIDs de {distribuidor_seleccionado} ({total_periodo:,} registros)"
@@ -658,8 +636,6 @@ with tab4:
             st.warning("⚠️ No hay datos disponibles")
     
     else:
-        # Análisis por período (código original)
-        # Selector de período
         col1, col2 = st.columns(2)
         
         with col1:
@@ -687,7 +663,6 @@ with tab4:
             with st.spinner("Generando análisis..."):
                 supabase = get_supabase_client()
                 
-                # Obtener TODOS los datos del período con paginación automática
                 all_records = []
                 offset = 0
                 limit = 1000
@@ -708,18 +683,15 @@ with tab4:
                     all_records.extend(envios_periodo.data)
                     offset += limit
                     
-                    # Si obtenemos menos registros que el límite, es la última página
                     if len(envios_periodo.data) < limit:
                         break
                 
-                # Usar all_records en lugar de envios_periodo.data
                 envios_periodo = type('obj', (object,), {'data': all_records})()
                 
                 if envios_periodo.data:
                     df = pd.DataFrame(envios_periodo.data)
                     df['fecha_envio'] = pd.to_datetime(df['fecha_envio'])
                     
-                    # Métricas del período
                     st.markdown("### 📊 Resumen del Período")
                     
                     col1, col2, col3, col4 = st.columns(4)
@@ -728,7 +700,7 @@ with tab4:
                         st.metric("Total Asignaciones", len(df))
                     
                     with col2:
-                        activas = len(df[df['estatus_distribuidor'] == 'ACTIVO'])
+                        activas = len(df[df['estatus_distribuidor'] == 'ACTIVO']) if 'estatus_distribuidor' in df.columns else 0
                         st.metric("Activas", activas)
                     
                     with col3:
@@ -741,15 +713,12 @@ with tab4:
                     
                     st.markdown("---")
                     
-                    # Gráfica de tendencia
                     st.markdown("### 📈 Tendencia de Asignaciones")
                     
                     df_diario = df.groupby('fecha_envio').size().reset_index(name='cantidad')
                     
-                    # Calcular días del período
                     dias_periodo = (fecha_fin - fecha_inicio).days + 1
                     
-                    # Usar gráfica de barras para períodos cortos (≤ 30 días), área para largos
                     if dias_periodo <= 30:
                         fig = px.bar(
                             df_diario,
@@ -774,7 +743,6 @@ with tab4:
                     
                     st.markdown("---")
                     
-                    # Top distribuidores del período
                     st.markdown("### 🏆 Top Distribuidores del Período")
                     
                     top_periodo = df.groupby('codigo_bt').size()\
@@ -803,7 +771,6 @@ with tab4:
                     fig_top.update_traces(textposition='outside')
                     st.plotly_chart(fig_top, use_container_width=True)
                     
-                    # Exportar análisis
                     st.markdown("---")
                     csv = df.to_csv(index=False).encode('utf-8')
                     st.download_button(
@@ -823,26 +790,21 @@ with tab5:
     with st.spinner("Cargando datos de distribuidores..."):
         supabase = get_supabase_client()
         
-        # Obtener todos los distribuidores
         todos_dist = supabase.table('distribuidores').select('*').execute()
         
         if todos_dist.data:
             df_dist = pd.DataFrame(todos_dist.data)
             
-            # Convertir fecha_alta a datetime
             df_dist['fecha_alta'] = pd.to_datetime(df_dist['fecha_alta'])
             
-            # Contar por estatus
             activos = len(df_dist[df_dist['estatus_distribuidor'] == 'ACTIVO'])
             suspendidos = len(df_dist[df_dist['estatus_distribuidor'] == 'SUSPENDIDO'])
             baja = len(df_dist[df_dist['estatus_distribuidor'] == 'BAJA'])
             
-            # Distribuidores nuevos este mes
             primer_dia_mes = datetime.now().replace(day=1)
             nuevos_mes = len(df_dist[df_dist['fecha_alta'] >= primer_dia_mes])
             mes_actual_nombre = datetime.now().strftime('%B %Y')
             
-            # Métricas principales
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
@@ -873,7 +835,6 @@ with tab5:
             
             st.markdown("---")
             
-            # Gráficas
             col1, col2 = st.columns(2)
             
             with col1:
@@ -898,12 +859,10 @@ with tab5:
             with col2:
                 st.subheader("📈 Nuevos Distribuidores por Mes")
                 
-                # Agrupar por mes de alta (desde diciembre 2024)
                 df_dist['mes_alta'] = df_dist['fecha_alta'].dt.to_period('M')
                 nuevos_por_mes = df_dist.groupby('mes_alta').size().reset_index(name='cantidad')
                 nuevos_por_mes['mes_str'] = nuevos_por_mes['mes_alta'].astype(str)
                 
-                # Filtrar desde diciembre 2024
                 nuevos_por_mes = nuevos_por_mes[nuevos_por_mes['mes_str'] >= '2024-12']
                 
                 if len(nuevos_por_mes) > 0:
@@ -930,7 +889,6 @@ with tab5:
             
             st.markdown("---")
             
-            # Tabla resumen mensual
             st.subheader("📋 Resumen Mensual de Nuevos Distribuidores")
             
             if len(nuevos_por_mes) > 0:
@@ -940,7 +898,6 @@ with tab5:
                 
                 st.dataframe(tabla_resumen, use_container_width=True, hide_index=True)
                 
-                # Botón de descarga
                 csv_dist = tabla_resumen.to_csv(index=False).encode('utf-8-sig')
                 st.download_button(
                     label="📅 Descargar Resumen Mensual",
