@@ -32,16 +32,13 @@ def _create_client() -> Client:
 
 def get_supabase_client() -> Client:
     """
-    Obtener cliente de Supabase con reconexión automática.
-    Si la conexión está caída, limpia el caché y reconecta.
+    Obtener cliente de Supabase con reconexion automatica.
+    Si la conexion esta caida, limpia el cache y reconecta.
     """
     try:
-        client = _create_client()
-        # Ping rápido para verificar conexión activa
-        client.table("distribuidores").select("id").limit(1).execute()
-        return client
+        return _create_client()
     except Exception:
-        # Limpiar caché y reconectar
+        # Limpiar cache y crear cliente nuevo
         _create_client.clear()
         url, key = _get_credentials()
         return create_client(url, key)
