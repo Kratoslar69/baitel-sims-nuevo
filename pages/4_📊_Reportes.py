@@ -255,7 +255,7 @@ with tab2:
             if estatus_dist_buscar != "TODOS":
                 dist_filtrados = supabase.table('distribuidores')\
                     .select('codigo_bt')\
-                    .eq('estatus_distribuidor', estatus_dist_buscar)\
+                    .eq('estatus', estatus_dist_buscar)\
                     .execute()
                 
                 codigos_bt_filtrados = [d['codigo_bt'] for d in dist_filtrados.data]
