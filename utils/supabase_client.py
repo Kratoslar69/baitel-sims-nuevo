@@ -1,5 +1,5 @@
 """
-Cliente de Supabase con reconexión automática
+Cliente de Supabase con cache
 """
 
 import streamlit as st
@@ -10,35 +10,28 @@ from dotenv import load_dotenv
 # Cargar variables de entorno (solo para desarrollo local)
 load_dotenv()
 
-def _get_credentials():
-    """Obtener URL y KEY de variables de entorno o secrets"""
+@st.cache_resource
+def get_supabase_client() -> Client:
+    """
+    Obtener cliente de Supabase con cache
+    Prioriza variables de entorno (Railway), luego secrets de Streamlit
+    
+    Returns:
+        Client: Cliente de Supabase
+    """
+    # Intentar obtener de variables de entorno primero (Railway, desarrollo local)
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_KEY")
+    
+    # Si no están en variables de entorno, intentar secrets de Streamlit
     if not url or not key:
         try:
             url = st.secrets["SUPABASE_URL"]
             key = st.secrets["SUPABASE_KEY"]
         except (KeyError, FileNotFoundError, AttributeError):
             pass
+    
     if not url or not key:
-        raise ValueError("SUPABASE_URL y SUPABASE_KEY deben estar configurados")
-    return url, key
-
-@st.cache_resource(show_spinner=False)
-def _create_client() -> Client:
-    """Crear cliente Supabase (cacheado a nivel de proceso)"""
-    url, key = _get_credentials()
+        raise ValueError("SUPABASE_URL y SUPABASE_KEY deben estar configurados en variables de entorno o secrets")
+    
     return create_client(url, key)
-
-def get_supabase_client() -> Client:
-    """
-    Obtener cliente de Supabase con reconexion automatica.
-    Si la conexion esta caida, limpia el cache y reconecta.
-    """
-    try:
-        return _create_client()
-    except Exception:
-        # Limpiar cache y crear cliente nuevo
-        _create_client.clear()
-        url, key = _get_credentials()
-        return create_client(url, key)
