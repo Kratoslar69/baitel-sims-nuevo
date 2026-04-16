@@ -255,7 +255,7 @@ with tab2:
             if estatus_dist_buscar != "TODOS":
                 dist_filtrados = supabase.table('distribuidores')\
                     .select('codigo_bt')\
-                    .eq('estatus', estatus_dist_buscar)\
+                    .eq('estatus_distribuidor', estatus_dist_buscar)\
                     .execute()
                 
                 codigos_bt_filtrados = [d['codigo_bt'] for d in dist_filtrados.data]
@@ -323,7 +323,8 @@ with tab2:
             file_name=st.session_state.tab2_csv_filename,
             mime="text/csv",
             use_container_width=True,
-            type="primary"
+            type="primary",
+            key="btn_download_tab2"
         )
 
 # TAB 3: POR DISTRIBUIDOR
